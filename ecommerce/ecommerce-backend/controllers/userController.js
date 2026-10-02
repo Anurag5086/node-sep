@@ -4,9 +4,9 @@ exports.getUser = async (req, res) => {
     try{
         const userId = req.user.userId
 
-        const user = await User.findById(userId)
+        const user = await User.findById(userId).select('-password')
         if(!user){
-            res.status(404).json({ success: false, message: "User not found!" })
+            return res.status(404).json({ success: false, message: "User not found!" })
         }
 
         res.status(200).json({ success: true, message: "User fetched successfully!", user })
@@ -17,12 +17,8 @@ exports.getUser = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try{
-        const users = await User.find({ role: 'user' })
-        if(!users){
-            res.status(404).json({ success: false, mesage: "Users not found!" })
-        }
-
-        req.status(200).json({ success: true, message: "Fetched all users!", users })
+        const users = await User.find({ role: 'user' }).select('-password')
+        res.status(200).json({ success: true, message: "Fetched all users!", users })
     }catch(err){
         res.status(500).json({ success: false, message: "Internal Server Error!" })
     }

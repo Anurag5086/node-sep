@@ -74,7 +74,12 @@ exports.loginUser = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 7 * 24 * 60 * 60 * 1000,
             sameSite: "lax"
-        }).status(200).json({ success: true, message: "Logged In Successfully!" })
+        }).status(200).json({
+            success: true,
+            message: "Logged In Successfully!",
+            token,
+            user: { _id: user._id, name: user.name, email: user.email, role: user.role }
+        })
     }catch(err){
         res.status(500).json({ success: false, message: "Internal Server Error!", error: err.message })
     }
