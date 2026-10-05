@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { getAllProducts } from '../api/catalog'
 import StoreHeader from '../components/StoreHeader'
 import { useAuth } from '../hooks/useAuth'
 import { useCart } from '../hooks/useCart'
@@ -7,8 +9,37 @@ import './Cart.css'
 
 export default function Cart() {
   const { isLoggedIn } = useAuth()
-  const { items, cartCount, subtotal, updateQuantity, removeFromCart, clearCart } =
-    useCart()
+  const {
+    items,
+    cartCount,
+    subtotal,
+    cartLoading,
+    hasUnavailable,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    applyCatalog,
+  } = useCart()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.pathname !== '/cart') return undefined
+    let cancelled = false
+
+    async function refreshForPage() {
+      try {
+        const list = await getAllProducts()
+        if (!cancelled) applyCatalog(list)
+      } catch {
+        /* ignore */
+      }
+    }
+
+    refreshForPage()
+    return () => {
+      cancelled = true
+    }
+  }, [location.pathname, applyCatalog])
 
   return (
     <div className="cart-page">
@@ -24,7 +55,11 @@ export default function Cart() {
           </p>
         </div>
 
-        {items.length === 0 ? (
+        {cartLoading ? (
+          <div className="cart-empty">
+            <p>Updating your bag with the latest prices and details…</p>
+          </div>
+        ) : items.length === 0 ? (
           <div className="cart-empty">
             <p>Looks like you haven&apos;t added anything yet.</p>
             <Link to="/" className="cart-empty__cta">
@@ -35,7 +70,10 @@ export default function Cart() {
           <div className="cart-layout">
             <ul className="cart-lines">
               {items.map((line) => (
-                <li key={line.productId} className="cart-line">
+                <li
+                  key={line.productId}
+                  className={`cart-line${line.unavailable ? ' cart-line--unavailable' : ''}`}
+                >
                   <div className="cart-line__media">
                     {line.image ? (
                       <img src={line.image} alt="" />
@@ -49,6 +87,11 @@ export default function Cart() {
                   <div className="cart-line__info">
                     <p className="cart-line__brand">{line.brand}</p>
                     <h2 className="cart-line__title">{line.title}</h2>
+                    {line.unavailable && (
+                      <p className="cart-line__warn">
+                        This item is no longer available. Remove it to continue.
+                      </p>
+                    )}
                     <p className="cart-line__price">
                       {formatPrice(line.sellingPrice)}
                       {line.mrpPrice > line.sellingPrice && (
@@ -77,7 +120,7 @@ export default function Cart() {
                         onClick={() =>
                           updateQuantity(line.productId, line.quantity + 1)
                         }
-                        disabled={line.quantity >= line.stockQuantity}
+                        disabled={line.unavailable || line.quantity >= line.stockQuantity}
                         aria-label="Increase quantity"
                       >
                         +
@@ -107,8 +150,18 @@ export default function Cart() {
               <p className="cart-summary__note">
                 Shipping and taxes calculated at checkout.
               </p>
+              {hasUnavailable && (
+                <p className="cart-summary__warn">
+                  Remove unavailable items before checkout.
+                </p>
+              )}
               {isLoggedIn ? (
-                <Link to="/checkout" className="cart-summary__checkout cart-summary__checkout--active">
+                <Link
+                  to="/checkout"
+                  className={`cart-summary__checkout cart-summary__checkout--active${hasUnavailable ? ' cart-summary__checkout--disabled' : ''}`}
+                  aria-disabled={hasUnavailable}
+                  onClick={(e) => hasUnavailable && e.preventDefault()}
+                >
                   Proceed to checkout
                 </Link>
               ) : (

@@ -1,29 +1,26 @@
 const CART_KEY = 'luxemart_cart'
 
+/** Persist only product id + quantity; details come from the API. */
+export function normalizeCartEntry(item) {
+  if (!item) return null
+  const productId = item.productId ?? item._id
+  const quantity = Math.max(1, Math.floor(Number(item.quantity) || 1))
+  if (!productId) return null
+  return { productId, quantity }
+}
+
 export function loadCartItems() {
   try {
     const raw = localStorage.getItem(CART_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.map(normalizeCartEntry).filter(Boolean)
   } catch {
     return []
   }
 }
 
-export function saveCartItems(items) {
-  localStorage.setItem(CART_KEY, JSON.stringify(items))
-}
-
-export function productToCartLine(product) {
-  return {
-    productId: product._id,
-    title: product.title,
-    brand: product.brand,
-    sellingPrice: product.sellingPrice,
-    mrpPrice: product.mrpPrice,
-    image: product.images?.[0]?.trim() || null,
-    stockQuantity: product.stockQuantity ?? 0,
-    quantity: 1,
-  }
+export function saveCartItems(entries) {
+  localStorage.setItem(CART_KEY, JSON.stringify(entries))
 }

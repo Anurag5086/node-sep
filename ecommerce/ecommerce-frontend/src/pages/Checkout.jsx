@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { getAllProducts } from '../api/catalog'
 import * as paymentApi from '../api/payment'
 import { createOrder } from '../api/orders'
 import { updateUserProfile } from '../api/user'
@@ -13,7 +14,14 @@ import './Checkout.css'
 export default function Checkout() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { items, subtotal, clearCart } = useCart()
+  const {
+    items,
+    subtotal,
+    clearCart,
+    hasUnavailable,
+    applyCatalog,
+  } = useCart()
+  const location = useLocation()
 
   const [phoneNumber, setPhoneNumber] = useState(() => user?.phoneNumber ?? '')
   const [address, setAddress] = useState(() => user?.address ?? '')
@@ -22,10 +30,31 @@ export default function Checkout() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (location.pathname !== '/checkout') return undefined
+    let cancelled = false
+
+    async function refreshForPage() {
+      try {
+        const list = await getAllProducts()
+        if (!cancelled) applyCatalog(list)
+      } catch {
+        /* ignore */
+      }
+    }
+
+    refreshForPage()
+    return () => {
+      cancelled = true
+    }
+  }, [location.pathname, applyCatalog])
+
+  useEffect(() => {
     if (items.length === 0) {
       navigate('/cart', { replace: true })
+    } else if (hasUnavailable) {
+      navigate('/cart', { replace: true })
     }
-  }, [items.length, navigate])
+  }, [items.length, hasUnavailable, navigate])
 
   function buildCartPayload() {
     return items.map((line) => ({
