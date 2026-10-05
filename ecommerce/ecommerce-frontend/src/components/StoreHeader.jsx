@@ -49,6 +49,10 @@ export default function StoreHeader({ searchValue = '', onSearchChange }) {
           )}
           {isLoggedIn ? (
             <>
+              <Link to="/orders" className="store-nav__item">
+                <OrdersIcon />
+                <span>Orders</span>
+              </Link>
               <span className="store-nav__greeting" title={user?.email}>
                 Hi, {user?.name?.split(' ')[0] ?? 'there'}
               </span>
@@ -88,6 +92,20 @@ function SearchIcon() {
         strokeWidth="2"
         strokeLinecap="round"
       />
+    </svg>
+  )
+}
+
+function OrdersIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M7 7h14l-1.5 9H8.5L7 7z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path d="M4 4h2v2H4V4z" fill="currentColor" />
     </svg>
   )
 }

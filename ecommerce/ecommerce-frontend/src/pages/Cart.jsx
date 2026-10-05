@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import StoreHeader from '../components/StoreHeader'
+import { useAuth } from '../hooks/useAuth'
 import { useCart } from '../hooks/useCart'
 import { formatPrice } from '../utils/format'
 import './Cart.css'
 
 export default function Cart() {
+  const { isLoggedIn } = useAuth()
   const { items, cartCount, subtotal, updateQuantity, removeFromCart, clearCart } =
     useCart()
 
@@ -105,9 +107,19 @@ export default function Cart() {
               <p className="cart-summary__note">
                 Shipping and taxes calculated at checkout.
               </p>
-              <button type="button" className="cart-summary__checkout" disabled>
-                Checkout (coming soon)
-              </button>
+              {isLoggedIn ? (
+                <Link to="/checkout" className="cart-summary__checkout cart-summary__checkout--active">
+                  Proceed to checkout
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  state={{ from: '/checkout' }}
+                  className="cart-summary__checkout cart-summary__checkout--active"
+                >
+                  Sign in to checkout
+                </Link>
+              )}
               <button type="button" className="cart-summary__clear" onClick={clearCart}>
                 Clear bag
               </button>
